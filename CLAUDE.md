@@ -15,13 +15,21 @@ is sent to a client. Full requirements: [assets/quote-invoice.md](assets/quote-i
 ### Current state: demo build, backend faked
 
 This is a demo — there is no real Supabase project and no real n8n instance wired up yet.
-`src/lib/mock-data.ts` fakes both: an in-memory array stands in for Supabase, and a plain
+`src/lib/mock-data.ts` fakes both: a small key-value store stands in for Supabase, and a plain
 function (`draftDocument`) fakes the Claude drafting call instead of hitting n8n/Claude. The
 `/new` → `/review/[review_id]` flow works end-to-end against this fake data. Everything below
 describes the **target** architecture (what to build toward when swapping in the real
 Supabase/n8n/Claude integrations) — treat `mock-data.ts` as the seam where real calls will
 replace fake ones function-by-function (`draftDocument` → intake webhook call,
 `approveDocument` → approval webhook call, `listClients`/`getDocument` → Supabase reads).
+
+The store itself: if `KV_REST_API_URL` is set (Vercel with the KV/Upstash integration attached),
+it persists to Vercel KV via `@vercel/kv`; otherwise it falls back to an in-memory object, so
+`npm run dev` needs zero setup locally. This split exists because serverless functions don't
+share memory across invocations/instances — the original plain in-memory array worked locally
+(one long-running process) but broke on Vercel (drafts 404'd on the very next request, since a
+different function instance had an empty copy of the data). See `workflows/deploy-frontend.md`
+for the one-time KV setup step.
 
 ## Architecture
 
@@ -119,9 +127,10 @@ replace fake ones function-by-function (`draftDocument` → intake webhook call,
 
 ## Open Questions / Assumptions
 
-- **Mock data resets on server restart** (and on hot-reload of `mock-data.ts` during `npm run
-  dev`) — it's a plain in-memory array, not persisted anywhere. Fine for demo purposes; will
-  naturally go away once Supabase is wired in.
+- **Local mock data still resets on server restart** (and on hot-reload of `mock-data.ts`
+  during `npm run dev`) — the in-memory fallback isn't persisted anywhere. On Vercel with KV
+  attached, data persists across requests/deploys until the KV store is cleared. Both go away
+  once Supabase is wired in.
 - **n8n workflows are not version-controlled** — they live only inside the n8n instance.
   Exporting them to `tools/n8n/` as JSON is a possible future enhancement, not done yet.
 - **PDF engine**: Carbone.io vs Puppeteer not yet decided — pick when building `tools/pdf/`.

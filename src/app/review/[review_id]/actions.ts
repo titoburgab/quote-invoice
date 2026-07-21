@@ -1,20 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { approveDocument, getDocument, regenerateDocument } from "@/lib/mock-data";
+import { approveDocument, getDocument, regenerateDocument, saveDocument } from "@/lib/mock-data";
 
 export async function approveAction(id: string) {
-  approveDocument(id);
+  await approveDocument(id);
   revalidatePath(`/review/${id}`);
 }
 
 export async function regenerateAction(id: string) {
-  regenerateDocument(id);
+  await regenerateDocument(id);
   revalidatePath(`/review/${id}`);
 }
 
 export async function updateDraftAction(id: string, formData: FormData) {
-  const doc = getDocument(id);
+  const doc = await getDocument(id);
   if (!doc) return;
 
   doc.summary = String(formData.get("summary") ?? doc.summary);
@@ -28,5 +28,6 @@ export async function updateDraftAction(id: string, formData: FormData) {
     doc.lineItems[0].rate = doc.lineItems[0].qty ? total / doc.lineItems[0].qty : total;
   }
 
+  await saveDocument(doc);
   revalidatePath(`/review/${id}`);
 }

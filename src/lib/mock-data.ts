@@ -1,5 +1,10 @@
-// In-memory demo data store. Resets whenever the dev/prod server restarts.
-// Stands in for Supabase + the Claude drafting step until those are wired up for real.
+// Demo data store. Stands in for Supabase + the Claude drafting call until those
+// are wired up for real. Persists via Vercel KV when configured (KV_REST_API_URL
+// set — e.g. once deployed with the Upstash/KV integration attached); otherwise
+// falls back to an in-memory object so local `npm run dev` needs zero setup.
+// The in-memory fallback resets on server restart — the KV-backed version doesn't.
+
+import { kv } from "@vercel/kv";
 
 export type DocType = "quote" | "invoice";
 export type Status =
@@ -57,7 +62,9 @@ export type Document = {
   dueDate?: string;
 };
 
-const clients: Client[] = [
+type Counters = { quote: number; invoice: number };
+
+const SEED_CLIENTS: Client[] = [
   {
     id: "client_1",
     name: "Jamie Rivera",
@@ -72,12 +79,12 @@ const clients: Client[] = [
   },
 ];
 
-const documents: Document[] = [
+const SEED_DOCUMENTS: Document[] = [
   {
     id: "seed-doc-1",
     type: "invoice",
     documentNumber: "INV-2026-001",
-    client: clients[0],
+    client: SEED_CLIENTS[0],
     projectTitle: "Brand refresh — June retainer",
     description: "Monthly retainer for ongoing brand design support.",
     status: "sent",
@@ -95,41 +102,74 @@ const documents: Document[] = [
   },
 ];
 
-let quoteCounter = 0;
-let invoiceCounter = 1; // seed doc above already used 001
+const SEED_COUNTERS: Counters = { quote: 0, invoice: 1 }; // seed doc above already used 001
 
-function nextDocumentNumber(type: DocType) {
+// --- storage backend ---
+
+const usingKv = Boolean(process.env.KV_REST_API_URL);
+const memory = new Map<string, unknown>();
+
+async function readKey<T>(key: string, seed: T): Promise<T> {
+  if (usingKv) {
+    const value = await kv.get<T>(key);
+    if (value !== null && value !== undefined) return value;
+    await kv.set(key, seed);
+    return seed;
+  }
+  if (!memory.has(key)) memory.set(key, seed);
+  return memory.get(key) as T;
+}
+
+async function writeKey<T>(key: string, value: T): Promise<void> {
+  if (usingKv) {
+    await kv.set(key, value);
+  } else {
+    memory.set(key, value);
+  }
+}
+
+const getClients = () => readKey<Client[]>("quote-invoice:clients", SEED_CLIENTS);
+const saveClients = (clients: Client[]) => writeKey("quote-invoice:clients", clients);
+const getDocuments = () => readKey<Document[]>("quote-invoice:documents", SEED_DOCUMENTS);
+const saveDocuments = (documents: Document[]) => writeKey("quote-invoice:documents", documents);
+const getCounters = () => readKey<Counters>("quote-invoice:counters", SEED_COUNTERS);
+const saveCounters = (counters: Counters) => writeKey("quote-invoice:counters", counters);
+
+function nextDocumentNumber(type: DocType, counters: Counters) {
   const year = new Date().getFullYear();
   if (type === "quote") {
-    quoteCounter += 1;
-    return `Q-${year}-${String(quoteCounter).padStart(3, "0")}`;
+    counters.quote += 1;
+    return `Q-${year}-${String(counters.quote).padStart(3, "0")}`;
   }
-  invoiceCounter += 1;
-  return `INV-${year}-${String(invoiceCounter).padStart(3, "0")}`;
+  counters.invoice += 1;
+  return `INV-${year}-${String(counters.invoice).padStart(3, "0")}`;
 }
 
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-export function listClients(): Client[] {
-  return clients;
+export async function listClients(): Promise<Client[]> {
+  return getClients();
 }
 
-export function findClientByEmail(email: string): Client | undefined {
+export async function findClientByEmail(email: string): Promise<Client | undefined> {
+  const clients = await getClients();
   return clients.find((c) => c.email.toLowerCase() === email.toLowerCase());
 }
 
-export function upsertClient(input: {
+export async function upsertClient(input: {
   name: string;
   email: string;
   company?: string;
   phone?: string;
-}): Client {
-  const existing = findClientByEmail(input.email);
+}): Promise<Client> {
+  const clients = await getClients();
+  const existing = clients.find((c) => c.email.toLowerCase() === input.email.toLowerCase());
   if (existing) return existing;
   const client: Client = { id: generateId(), ...input };
   clients.push(client);
+  await saveClients(clients);
   return client;
 }
 
@@ -150,7 +190,7 @@ export type DraftInput = {
 };
 
 /** Stands in for the n8n intake webhook + Claude drafting call. */
-export function draftDocument(input: DraftInput): Document {
+export async function draftDocument(input: DraftInput): Promise<Document> {
   const doc: Document = {
     id: generateId(),
     type: input.type,
@@ -170,24 +210,38 @@ export function draftDocument(input: DraftInput): Document {
     dueDate: input.dueDate,
   };
 
+  const documents = await getDocuments();
   documents.unshift(doc);
+  await saveDocuments(documents);
   return doc;
 }
 
-export function getDocument(id: string): Document | undefined {
+export async function getDocument(id: string): Promise<Document | undefined> {
+  const documents = await getDocuments();
   return documents.find((d) => d.id === id);
 }
 
-export function listDocuments(): Document[] {
-  return documents;
+export async function listDocuments(): Promise<Document[]> {
+  return getDocuments();
+}
+
+/** Persists edits made on the review page (the "Edit before sending" form). */
+export async function saveDocument(doc: Document): Promise<void> {
+  const documents = await getDocuments();
+  const index = documents.findIndex((d) => d.id === doc.id);
+  if (index !== -1) documents[index] = doc;
+  await saveDocuments(documents);
 }
 
 /** Stands in for the n8n approval webhook (assign number, "send" email, archive). */
-export function approveDocument(id: string): Document | undefined {
-  const doc = getDocument(id);
+export async function approveDocument(id: string): Promise<Document | undefined> {
+  const doc = await getDocument(id);
   if (!doc) return undefined;
-  doc.documentNumber = nextDocumentNumber(doc.type);
+  const counters = await getCounters();
+  doc.documentNumber = nextDocumentNumber(doc.type, counters);
   doc.status = "sent";
+  await saveCounters(counters);
+  await saveDocument(doc);
   return doc;
 }
 
@@ -221,9 +275,10 @@ function draftContent(input: DraftInput): Pick<Document, "summary" | "lineItems"
 }
 
 /** Re-runs the fake drafting step with the same inputs — stands in for "Regenerate". */
-export function regenerateDocument(id: string): Document | undefined {
-  const doc = getDocument(id);
+export async function regenerateDocument(id: string): Promise<Document | undefined> {
+  const doc = await getDocument(id);
   if (!doc) return undefined;
   Object.assign(doc, draftContent({ ...doc, notes: doc.notesText }));
+  await saveDocument(doc);
   return doc;
 }

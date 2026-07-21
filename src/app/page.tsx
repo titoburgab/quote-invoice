@@ -2,8 +2,8 @@ import Link from "next/link";
 import { listDocuments } from "@/lib/mock-data";
 import { StatusStamp } from "@/components/StatusStamp";
 
-export default function Home() {
-  const documents = listDocuments();
+export default async function Home() {
+  const documents = await listDocuments();
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-16 sm:px-10">

@@ -3,8 +3,8 @@ import { listClients } from "@/lib/mock-data";
 import { createDraft } from "./actions";
 import { NewDocumentForm } from "./NewDocumentForm";
 
-export default function NewDocumentPage() {
-  const clients = listClients();
+export default async function NewDocumentPage() {
+  const clients = await listClients();
 
   return (
     <div className="mx-auto w-full max-w-2xl px-6 py-16 sm:px-10">

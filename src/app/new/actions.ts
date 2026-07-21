@@ -22,9 +22,9 @@ export async function createDraft(formData: FormData) {
 
   const client =
     str(formData, "clientMode") === "existing"
-      ? listClients().find((c) => c.id === str(formData, "existingClientId")) ??
-        findClientByEmail(str(formData, "clientEmail"))
-      : upsertClient({
+      ? (await listClients()).find((c) => c.id === str(formData, "existingClientId")) ??
+        (await findClientByEmail(str(formData, "clientEmail")))
+      : await upsertClient({
           name: str(formData, "clientName"),
           email: str(formData, "clientEmail"),
           company: optionalStr(formData, "clientCompany"),
@@ -35,7 +35,7 @@ export async function createDraft(formData: FormData) {
     throw new Error("Select or enter a client before generating a draft.");
   }
 
-  const doc = draftDocument({
+  const doc = await draftDocument({
     type,
     client,
     projectTitle: str(formData, "projectTitle"),

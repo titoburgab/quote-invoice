@@ -14,7 +14,7 @@ const fieldLabel = "block text-sm font-medium text-ink-soft";
 
 export default async function ReviewPage({ params }: PageProps) {
   const { review_id } = await params;
-  const doc = getDocument(review_id);
+  const doc = await getDocument(review_id);
   if (!doc) notFound();
 
   const boundApprove = approveAction.bind(null, doc.id);
