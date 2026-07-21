@@ -42,10 +42,12 @@ export type Document = {
   termsText: string;
   notesText: string;
 
-  // quote-specific
+  // rate terms (shown for both quotes and invoices)
   estimatedHours?: number;
   rateType?: "hourly" | "fixed";
   rate?: number;
+
+  // quote-specific
   validUntil?: string;
 
   // invoice-specific
@@ -190,21 +192,16 @@ export function approveDocument(id: string): Document | undefined {
 }
 
 function draftContent(input: DraftInput): Pick<Document, "summary" | "lineItems" | "total" | "termsText" | "notesText"> {
-  const amount =
-    input.type === "quote"
-      ? input.rateType === "hourly"
-        ? (input.estimatedHours ?? 0) * (input.rate ?? 0)
-        : input.rate ?? 0
-      : input.rate ?? 0;
+  const isHourly = input.rateType === "hourly";
+  const qty = isHourly ? input.estimatedHours ?? 1 : 1;
+  const rate = isHourly ? input.rate ?? 0 : input.rate ?? 0;
+  const amount = isHourly ? qty * (input.rate ?? 0) : input.rate ?? 0;
 
   const lineItems: LineItem[] = [
     {
       description: input.projectTitle,
-      qty: input.type === "quote" && input.rateType === "hourly" ? input.estimatedHours ?? 1 : 1,
-      rate:
-        input.type === "quote" && input.rateType === "hourly"
-          ? input.rate ?? 0
-          : amount,
+      qty,
+      rate,
       amount,
     },
   ];

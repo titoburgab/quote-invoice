@@ -159,46 +159,49 @@ export function NewDocumentForm({ clients, action }: Props) {
         </div>
       </Section>
 
+      <Section title="Rate">
+        <Segmented
+          name="rateType"
+          value={rateType}
+          onChange={setRateType}
+          options={[
+            { value: "hourly", label: "Hourly" },
+            { value: "fixed", label: "Fixed price" },
+          ]}
+        />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {rateType === "hourly" && (
+            <div>
+              <label className={labelClass} htmlFor="estimatedHours">
+                Estimated hours
+              </label>
+              <input
+                id="estimatedHours"
+                name="estimatedHours"
+                type="number"
+                min={0}
+                step="0.5"
+                className={inputClass}
+                required
+              />
+            </div>
+          )}
+          <div>
+            <label className={labelClass} htmlFor="rate">
+              {rateType === "hourly" ? "Rate ($/hr)" : "Fixed price ($)"}
+            </label>
+            <input id="rate" name="rate" type="number" min={0} step="0.01" className={inputClass} required />
+          </div>
+        </div>
+      </Section>
+
       {type === "quote" ? (
         <Section title="Quote terms">
-          <Segmented
-            name="rateType"
-            value={rateType}
-            onChange={setRateType}
-            options={[
-              { value: "hourly", label: "Hourly" },
-              { value: "fixed", label: "Fixed price" },
-            ]}
-          />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {rateType === "hourly" && (
-              <div>
-                <label className={labelClass} htmlFor="estimatedHours">
-                  Estimated hours
-                </label>
-                <input
-                  id="estimatedHours"
-                  name="estimatedHours"
-                  type="number"
-                  min={0}
-                  step="0.5"
-                  className={inputClass}
-                  required
-                />
-              </div>
-            )}
-            <div>
-              <label className={labelClass} htmlFor="rate">
-                {rateType === "hourly" ? "Rate ($/hr)" : "Fixed price ($)"}
-              </label>
-              <input id="rate" name="rate" type="number" min={0} step="0.01" className={inputClass} required />
-            </div>
-            <div>
-              <label className={labelClass} htmlFor="validUntil">
-                Valid until
-              </label>
-              <input id="validUntil" name="validUntil" type="date" className={inputClass} />
-            </div>
+          <div>
+            <label className={labelClass} htmlFor="validUntil">
+              Valid until
+            </label>
+            <input id="validUntil" name="validUntil" type="date" className={inputClass} />
           </div>
         </Section>
       ) : (
@@ -217,12 +220,6 @@ export function NewDocumentForm({ clients, action }: Props) {
               />
             </div>
             <div>
-              <label className={labelClass} htmlFor="rate">
-                Amount to bill ($)
-              </label>
-              <input id="rate" name="rate" type="number" min={0} step="0.01" className={inputClass} required />
-            </div>
-            <div>
               <label className={labelClass} htmlFor="paymentTerms">
                 Payment terms
               </label>
@@ -234,7 +231,7 @@ export function NewDocumentForm({ clients, action }: Props) {
               </label>
               <input id="dueDate" name="dueDate" type="date" className={inputClass} />
             </div>
-            <div className="sm:col-span-2">
+            <div>
               <label className={labelClass} htmlFor="linkedQuoteId">
                 Linked quote ID (optional)
               </label>

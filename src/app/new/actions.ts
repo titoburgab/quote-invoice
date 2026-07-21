@@ -42,7 +42,7 @@ export async function createDraft(formData: FormData) {
     description: str(formData, "description"),
     notes: optionalStr(formData, "notes"),
     estimatedHours: optionalNumber(formData, "estimatedHours"),
-    rateType: type === "quote" ? (str(formData, "rateType") === "fixed" ? "fixed" : "hourly") : undefined,
+    rateType: str(formData, "rateType") === "fixed" ? "fixed" : "hourly",
     rate: optionalNumber(formData, "rate"),
     validUntil: optionalStr(formData, "validUntil"),
     billingPeriod: optionalStr(formData, "billingPeriod"),
