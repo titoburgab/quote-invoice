@@ -9,8 +9,56 @@ type Props = {
 };
 
 const inputClass =
-  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900";
-const labelClass = "block text-sm font-medium text-zinc-700 dark:text-zinc-300";
+  "w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink";
+const labelClass = "block text-sm font-medium text-ink-soft";
+
+function Segmented<T extends string>({
+  name,
+  options,
+  value,
+  onChange,
+}: {
+  name: string;
+  options: readonly { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-full border border-line bg-surface p-1">
+      {options.map((option) => {
+        const active = value === option.value;
+        return (
+          <label key={option.value} className="relative">
+            <input
+              type="radio"
+              name={name}
+              value={option.value}
+              checked={active}
+              onChange={() => onChange(option.value)}
+              className="sr-only"
+            />
+            <span
+              className={`block cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                active ? "bg-ink text-bg" : "text-ink-soft"
+              }`}
+            >
+              {option.label}
+            </span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border-t border-paper-line pt-6 first:border-t-0 first:pt-0">
+      <h2 className="font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">{title}</h2>
+      <div className="mt-4 flex flex-col gap-4">{children}</div>
+    </div>
+  );
+}
 
 export function NewDocumentForm({ clients, action }: Props) {
   const [type, setType] = useState<"quote" | "invoice">("quote");
@@ -20,49 +68,31 @@ export function NewDocumentForm({ clients, action }: Props) {
   const [rateType, setRateType] = useState<"hourly" | "fixed">("hourly");
 
   return (
-    <form action={action} className="flex flex-col gap-8">
-      <fieldset className="flex gap-4">
-        <legend className={labelClass}>Document type</legend>
-        {(["quote", "invoice"] as const).map((option) => (
-          <label key={option} className="flex items-center gap-2 text-sm capitalize">
-            <input
-              type="radio"
-              name="type"
-              value={option}
-              checked={type === option}
-              onChange={() => setType(option)}
-            />
-            {option}
-          </label>
-        ))}
-      </fieldset>
+    <form
+      action={action}
+      className="flex flex-col gap-8 rounded-lg border border-paper-line bg-paper p-8 text-paper-ink shadow-sm"
+    >
+      <Segmented
+        name="type"
+        value={type}
+        onChange={setType}
+        options={[
+          { value: "quote", label: "Quote" },
+          { value: "invoice", label: "Invoice" },
+        ]}
+      />
 
-      <div className="flex flex-col gap-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Client</h2>
-
+      <Section title="Client">
         {clients.length > 0 && (
-          <fieldset className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="clientMode"
-                value="existing"
-                checked={clientMode === "existing"}
-                onChange={() => setClientMode("existing")}
-              />
-              Existing client
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="clientMode"
-                value="new"
-                checked={clientMode === "new"}
-                onChange={() => setClientMode("new")}
-              />
-              New client
-            </label>
-          </fieldset>
+          <Segmented
+            name="clientMode"
+            value={clientMode}
+            onChange={setClientMode}
+            options={[
+              { value: "existing", label: "Existing client" },
+              { value: "new", label: "New client" },
+            ]}
+          />
         )}
 
         {clientMode === "existing" && clients.length > 0 ? (
@@ -106,10 +136,9 @@ export function NewDocumentForm({ clients, action }: Props) {
             </div>
           </div>
         )}
-      </div>
+      </Section>
 
-      <div className="flex flex-col gap-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Project</h2>
+      <Section title="Project">
         <div>
           <label className={labelClass} htmlFor="projectTitle">
             Project title
@@ -128,26 +157,19 @@ export function NewDocumentForm({ clients, action }: Props) {
           </label>
           <textarea id="notes" name="notes" rows={2} className={inputClass} />
         </div>
-      </div>
+      </Section>
 
       {type === "quote" ? (
-        <div className="flex flex-col gap-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Quote details</h2>
-          <fieldset className="flex gap-4">
-            <legend className={labelClass}>Rate type</legend>
-            {(["hourly", "fixed"] as const).map((option) => (
-              <label key={option} className="flex items-center gap-2 text-sm capitalize">
-                <input
-                  type="radio"
-                  name="rateType"
-                  value={option}
-                  checked={rateType === option}
-                  onChange={() => setRateType(option)}
-                />
-                {option}
-              </label>
-            ))}
-          </fieldset>
+        <Section title="Quote terms">
+          <Segmented
+            name="rateType"
+            value={rateType}
+            onChange={setRateType}
+            options={[
+              { value: "hourly", label: "Hourly" },
+              { value: "fixed", label: "Fixed price" },
+            ]}
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {rateType === "hourly" && (
               <div>
@@ -178,10 +200,9 @@ export function NewDocumentForm({ clients, action }: Props) {
               <input id="validUntil" name="validUntil" type="date" className={inputClass} />
             </div>
           </div>
-        </div>
+        </Section>
       ) : (
-        <div className="flex flex-col gap-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Invoice details</h2>
+        <Section title="Invoice terms">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass} htmlFor="billingPeriod">
@@ -220,14 +241,14 @@ export function NewDocumentForm({ clients, action }: Props) {
               <input id="linkedQuoteId" name="linkedQuoteId" className={inputClass} />
             </div>
           </div>
-        </div>
+        </Section>
       )}
 
       <button
         type="submit"
-        className="self-start rounded-full bg-black px-6 py-3 text-sm font-medium text-white dark:bg-white dark:text-black"
+        className="self-start rounded-md bg-paper-ink px-6 py-3 text-sm font-medium text-paper transition-transform hover:-translate-y-0.5 hover:shadow-md"
       >
-        Generate draft
+        Draft {type}
       </button>
     </form>
   );

@@ -1,26 +1,81 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --bg: #faf9f5;
+  --surface: #ffffff;
+  --line: #e4e1d6;
+  --ink: #1e2c28;
+  --ink-soft: #5f6b64;
+  --ink-faint: #97a099;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --paper: #edefe1;
+  --paper-line: #c9cdb9;
+  --paper-ink: #1e2c28;
+
+  --stamp: #a23d2a;
+  --stamp-ink: #f4ece7;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #11161a;
+    --surface: #171d20;
+    --line: #2a322e;
+    --ink: #eceee3;
+    --ink-soft: #97a29a;
+    --ink-faint: #5f6b64;
+
+    --paper: #edefe1;
+    --paper-line: #c9cdb9;
+    --paper-ink: #1e2c28;
+
+    --stamp: #c24e38;
+    --stamp-ink: #f4ece7;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-paper: var(--paper);
+  --color-paper-line: var(--paper-line);
+  --color-paper-ink: var(--paper-ink);
+
+  --color-stamp: var(--stamp);
+  --color-stamp-ink: var(--stamp-ink);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display), Georgia, serif;
+  }
+  .font-mono {
+    font-family: var(--font-mono), ui-monospace, monospace;
+  }
+}
+
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: rotate(-9deg) scale(1.4);
+  }
+  to {
+    opacity: 0.9;
+    transform: rotate(-9deg) scale(1);
+  }
 }
