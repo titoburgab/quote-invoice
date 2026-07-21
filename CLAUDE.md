@@ -12,6 +12,17 @@ document creation with a human-in-the-loop pipeline:
 The AI drafts every quote/invoice as structured JSON; a human always approves before anything
 is sent to a client. Full requirements: [assets/quote-invoice.md](assets/quote-invoice.md).
 
+### Current state: demo build, backend faked
+
+This is a demo — there is no real Supabase project and no real n8n instance wired up yet.
+`src/lib/mock-data.ts` fakes both: an in-memory array stands in for Supabase, and a plain
+function (`draftDocument`) fakes the Claude drafting call instead of hitting n8n/Claude. The
+`/new` → `/review/[review_id]` flow works end-to-end against this fake data. Everything below
+describes the **target** architecture (what to build toward when swapping in the real
+Supabase/n8n/Claude integrations) — treat `mock-data.ts` as the seam where real calls will
+replace fake ones function-by-function (`draftDocument` → intake webhook call,
+`approveDocument` → approval webhook call, `listClients`/`getDocument` → Supabase reads).
+
 ## Architecture
 
 | Layer | Tool | Role |
@@ -81,12 +92,16 @@ is sent to a client. Full requirements: [assets/quote-invoice.md](assets/quote-i
 
 ## Setup / Commands
 
-> Stubbed — filled in once the Next.js app and Supabase project are scaffolded.
-
-- Frontend dev server: `npm run dev` (from repo root, once `package.json` exists)
-- Supabase: local CLI commands TBD (`supabase start`, migrations in `tools/supabase/migrations/`)
-- n8n: cloud/self-hosted instance — no local run; changes made via n8n UI, workflows referenced
-  (not exported) for now per `workflows/update-n8n-workflow.md`
+- Install deps: `npm install`
+- Dev server: `npm run dev` (Next.js on `http://localhost:3000`, Turbopack) — runs fully
+  standalone right now against the mock data layer, no `.env` needed.
+- Type-check: `npx tsc --noEmit`
+- Lint: `npm run lint`
+- Build: `npm run build`
+- Supabase (not yet wired up): local CLI commands TBD (`supabase start`, migrations in
+  `tools/supabase/migrations/`)
+- n8n (not yet wired up): cloud/self-hosted instance — no local run; changes made via n8n UI,
+  workflows referenced (not exported) for now per `workflows/update-n8n-workflow.md`
 
 ## Claude Code-Specific Instructions
 
@@ -104,12 +119,15 @@ is sent to a client. Full requirements: [assets/quote-invoice.md](assets/quote-i
 
 ## Open Questions / Assumptions
 
-- **Next.js app location**: assumed to live at repo root (`app/`, `components/`, `lib/` as
-  siblings of `/workflows/`, `/tools/`, `/temp/`) rather than a nested `/frontend/` subfolder.
-  Confirm before scaffolding the app.
+- **Mock data resets on server restart** (and on hot-reload of `mock-data.ts` during `npm run
+  dev`) — it's a plain in-memory array, not persisted anywhere. Fine for demo purposes; will
+  naturally go away once Supabase is wired in.
 - **n8n workflows are not version-controlled** — they live only inside the n8n instance.
   Exporting them to `tools/n8n/` as JSON is a possible future enhancement, not done yet.
-- **Git repo**: not yet initialized. Run `git init` when ready.
 - **PDF engine**: Carbone.io vs Puppeteer not yet decided — pick when building `tools/pdf/`.
+  The review page currently renders an HTML table as a PDF-preview stand-in, not an actual PDF.
 - **`review_id` access control**: private/unguessable ID vs basic auth not yet decided — pick
-  when building the Vercel review page.
+  when building real auth for the Vercel review page (demo IDs are short random strings with no
+  access control at all).
+- **When to swap in real Supabase/n8n**: not yet decided — next candidates are the Supabase
+  schema (`clients`/`quotes`/`invoices`) or an actual n8n intake workflow.
