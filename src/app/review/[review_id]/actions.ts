@@ -6,11 +6,13 @@ import { approveDocument, getDocument, regenerateDocument, saveDocument } from "
 export async function approveAction(id: string) {
   await approveDocument(id);
   revalidatePath(`/review/${id}`);
+  revalidatePath("/");
 }
 
 export async function regenerateAction(id: string) {
   await regenerateDocument(id);
   revalidatePath(`/review/${id}`);
+  revalidatePath("/");
 }
 
 export async function updateDraftAction(id: string, formData: FormData) {

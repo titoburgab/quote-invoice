@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { draftDocument, findClientByEmail, listClients, upsertClient } from "@/lib/mock-data";
 
 function str(formData: FormData, key: string): string {
@@ -51,5 +52,6 @@ export async function createDraft(formData: FormData) {
     dueDate: optionalStr(formData, "dueDate"),
   });
 
+  revalidatePath("/");
   redirect(`/review/${doc.id}`);
 }

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { listDocuments } from "@/lib/mock-data";
 import { StatusStamp } from "@/components/StatusStamp";
 
+// Reads live data from the store on every request — never statically cache this page.
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const documents = await listDocuments();
 

@@ -4,6 +4,9 @@ import { getDocument } from "@/lib/mock-data";
 import { StatusStamp } from "@/components/StatusStamp";
 import { approveAction, regenerateAction, updateDraftAction } from "./actions";
 
+// Reads live data from the store on every request — never statically cache this page.
+export const dynamic = "force-dynamic";
+
 type PageProps = {
   params: Promise<{ review_id: string }>;
 };

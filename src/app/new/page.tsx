@@ -3,6 +3,9 @@ import { listClients } from "@/lib/mock-data";
 import { createDraft } from "./actions";
 import { NewDocumentForm } from "./NewDocumentForm";
 
+// Reads the live client list from the store on every request — never statically cache this page.
+export const dynamic = "force-dynamic";
+
 export default async function NewDocumentPage() {
   const clients = await listClients();
 
