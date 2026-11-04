@@ -2,6 +2,8 @@
 
 @AGENTS.md
 
+Project state, changes, failures and lessons live in BLUEPRINT.md. Read it first.
+
 ## Project Overview
 
 AI-powered quote & invoice generation for a freelance/agency business. Replaces manual
