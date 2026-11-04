@@ -135,8 +135,8 @@ for the one-time KV setup step.
   Exporting them to `tools/n8n/` as JSON is a possible future enhancement, not done yet.
 - **PDF engine**: Carbone.io vs Puppeteer not yet decided — pick when building `tools/pdf/`.
   The review page currently renders an HTML table as a PDF-preview stand-in, not an actual PDF.
-- **`review_id` access control**: private/unguessable ID vs basic auth not yet decided — pick
-  when building real auth for the Vercel review page (demo IDs are short random strings with no
-  access control at all).
+- **Access control**: the whole app sits behind a single shared password (`USER_PASSWORD` env var;
+  `src/proxy.ts` gates every route, `/login` sets an HMAC session cookie). Set it in Vercel too.
+  `review_id`s are still short random strings — fine behind the password, revisit if per-user auth is needed.
 - **When to swap in real Supabase/n8n**: not yet decided — next candidates are the Supabase
   schema (`clients`/`quotes`/`invoices`) or an actual n8n intake workflow.

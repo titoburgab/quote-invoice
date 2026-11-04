@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logout } from "./login/actions";
 
 export default function Home() {
   return (
@@ -12,12 +13,19 @@ export default function Home() {
             Ledger
           </h1>
         </div>
+        <div className="flex shrink-0 items-center gap-4">
+        <form action={logout}>
+          <button className="font-mono text-xs uppercase tracking-wider text-ink-faint hover:text-ink">
+            Sign out
+          </button>
+        </form>
         <Link
           href="/new"
           className="shrink-0 rounded-md bg-ink px-5 py-2.5 font-mono text-xs font-medium uppercase tracking-wider text-bg transition-transform hover:-translate-y-0.5 hover:shadow-md"
         >
           + New
         </Link>
+        </div>
       </header>
 
       <section className="mt-10 flex-1">
